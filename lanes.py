@@ -33,14 +33,14 @@ def average_slope_intercept(image,lines):
 
 
 
-def canny(lane_image):
-    gray = cv2.cvtColor(image,cv2.COLOR_RGB2GRAY)
+def canny(img):
+    gray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
     blur=cv2.GaussianBlur(gray,(5,5),0)#5,5 is kernal
     canny = cv2.Canny(blur,50,150)#50 and 150 are ratio of low threshold to high threshold
     return canny
 
-def display_lines(image,lines):
-    line_image = np.zeros_like(image)
+def display_lines(img,lines):
+    line_image = np.zeros_like(img)
     if lines is not None:
         for x1,y1,x2,y2 in lines:
             cv2.line(line_image,(x1,y1),(x2,y2),(255,0,0),10)
@@ -78,36 +78,53 @@ def region_of_interest(image):
     masked_image = cv2.bitwise_and(image,mask)
     return masked_image
 
+#
+# image = cv2.imread('test_image.jpg')
+# lane_image=np.copy(image)
+# canny_image = canny(lane_image)#we've passed initial rgb image here
+# cropped_image = region_of_interest(canny_image)
+# lines = cv2.HoughLinesP(cropped_image,2,np.pi/180,100,np.array([]),minLineLength=40,maxLineGap=5)
+#
+#
+#
+# """cv2.HoughLinesP(image,rho, theta, threshold, np.array ([ ]), minLineLength=xx, maxLineGap=xx)
+# edges: Output of the edge detector.
+# lines: A vector to store the coordinates of the start and end of the line.
+# rho: The resolution parameter \rho in pixels.
+# theta: The resolution of the parameter \theta in radians.
+# threshold: The minimum number of intersecting points to detect a line."""
+#
+# averaged_lines = average_slope_intercept(lane_image,lines)
+# line_image = display_lines(lane_image,averaged_lines)
+#
+# combo_image=cv2.addWeighted(lane_image,0.8,line_image,1,1)
+# """
+# dst = cv2.addWeighted(src1, alpha, src2, beta, gamma[, dst[, dtype]])
+# rc1 – first input array.
+# alpha – weight of the first array elements.
+# src2 – second input array of the same size and channel number as src1.
+# beta – weight of the second array elements.
+# dst – output array that has the same size and number of channels as the input arrays.
+# gamma – scalar added to each sum.
+# dtype – optional depth of the output array; when both input arrays have the same depth,
+#  dtype can be set to -1, which will be equivalent to src1.depth().
+# """
+# cv2.imshow("result",combo_image)
+# cv2.waitKey(0)
 
-image = cv2.imread('test_image.jpg')
-lane_image=np.copy(image)
-canny_image = canny(lane_image)#we've passed initial rgb image here
-cropped_image = region_of_interest(canny_image)
-lines = cv2.HoughLinesP(cropped_image,2,np.pi/180,100,np.array([]),minLineLength=40,maxLineGap=5)
+#using video
+cap = cv2.VideoCapture("test2.mp4")
+while(cap.isOpened()):
+    _, frame = cap.read()
+    canny_image = canny(frame)#we've passed initial rgb image here
+    cropped_image = region_of_interest(canny_image)
+    lines = cv2.HoughLinesP(cropped_image,2,np.pi/180,100,np.array([]),minLineLength=40,maxLineGap=5)
+    averaged_lines = average_slope_intercept(frame,lines)
+    line_image = display_lines(frame,averaged_lines)
 
-
-
-"""cv2.HoughLinesP(image,rho, theta, threshold, np.array ([ ]), minLineLength=xx, maxLineGap=xx)
-edges: Output of the edge detector.
-lines: A vector to store the coordinates of the start and end of the line.
-rho: The resolution parameter \rho in pixels.
-theta: The resolution of the parameter \theta in radians.
-threshold: The minimum number of intersecting points to detect a line."""
-
-averaged_lines = average_slope_intercept(lane_image,lines)
-line_image = display_lines(lane_image,averaged_lines)
-
-combo_image=cv2.addWeighted(lane_image,0.8,line_image,1,1)
-"""
-dst = cv2.addWeighted(src1, alpha, src2, beta, gamma[, dst[, dtype]])
-rc1 – first input array.
-alpha – weight of the first array elements.
-src2 – second input array of the same size and channel number as src1.
-beta – weight of the second array elements.
-dst – output array that has the same size and number of channels as the input arrays.
-gamma – scalar added to each sum.
-dtype – optional depth of the output array; when both input arrays have the same depth,
- dtype can be set to -1, which will be equivalent to src1.depth().
-"""
-cv2.imshow("result",combo_image)
-cv2.waitKey(0)
+    combo_image=cv2.addWeighted(frame,0.8,line_image,1,1)
+    cv2.imshow("result",combo_image)
+    if cv2.waitKey(1) == ord('q'):
+        break
+cap.release()
+cv2.destroyAllWindows()
